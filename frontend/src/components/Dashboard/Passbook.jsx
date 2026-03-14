@@ -7,7 +7,7 @@ const Passbook = ({ onBack }) => {
     const { user } = useAuth();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState(null); // eslint-disable-line no-unused-vars
     const [balance, setBalance] = useState(0);
 
     useEffect(() => {

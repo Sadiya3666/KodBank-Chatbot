@@ -35,7 +35,7 @@ const Chatbot = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0); // eslint-disable-line no-unused-vars
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [pendingFile, setPendingFile] = useState(null);
   const messagesEndRef = useRef(null);
