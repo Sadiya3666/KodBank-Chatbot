@@ -1,28 +1,41 @@
-/* Glassmorphic Dashboard Styles */
-
-/* Dashboard Container */
 .dashboard-container {
   min-height: 100vh;
-  background: var(--bg-gradient-dark);
+  background: var(--slate-950);
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow-x: hidden;
 }
 
 .dashboard-container::before {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
   background:
-    radial-gradient(circle at 15% 25%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 45%),
+    radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.1) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 60%);
   z-index: -1;
-  animation: float 25s ease-in-out infinite;
+  filter: blur(100px);
+  animation: bgAnimation 30s ease-in-out infinite alternate;
 }
+
+
+
+
+@keyframes bgAnimation {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(-2%, -2%) rotate(5deg);
+  }
+}
+
 
 /* Header */
 .dashboard-header {
@@ -31,7 +44,7 @@
   border-bottom: 1px solid var(--glass-border);
   color: var(--text-primary);
   padding: 16px 0;
-  box-shadow: var(--shadow-glass);
+  box-shadow: var(--glass-shadow);
   position: relative;
   z-index: 10;
 }
@@ -127,23 +140,27 @@
   transition: all var(--transition-base);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
 }
 
 .logout-button:hover {
-  background: var(--glass-btn-bg-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-glass);
+  background: var(--glass-bg-light);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  color: var(--primary-light);
 }
 
 /* Navigation */
 .dashboard-nav {
-  background: var(--glass-bg);
+  background: var(--glass-bg-dark);
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--glass-border);
   position: sticky;
   top: 0;
   z-index: 5;
+  margin-bottom: 20px;
 }
 
 .nav-content {
@@ -151,59 +168,53 @@
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
-  gap: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.nav-content::-webkit-scrollbar {
-  display: none;
+  justify-content: center;
+  gap: 10px;
 }
 
 .nav-item {
-  background: none;
+  background: transparent;
   border: none;
   color: var(--text-secondary);
-  padding: 16px 24px;
+  padding: 18px 25px;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all var(--transition-base);
-  border-bottom: 3px solid transparent;
-  white-space: nowrap;
+  transition: all 0.3s ease;
+  border-radius: 0;
   position: relative;
 }
 
-.nav-item::before {
+.nav-item::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 50%;
   width: 0;
-  height: 3px;
+  height: 2px;
   background: var(--primary-gradient);
-  transition: all var(--transition-base);
+  transition: all 0.3s ease;
   transform: translateX(-50%);
 }
 
 .nav-item:hover {
-  color: var(--text-primary);
+  color: var(--primary-light);
   background: var(--glass-bg-light);
-}
-
-.nav-item:hover::before {
-  width: 80%;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .nav-item.active {
-  color: var(--primary);
+  color: var(--text-primary);
   background: var(--glass-bg-light);
+  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.2);
 }
 
-.nav-item.active::before {
+.nav-item.active::after {
   width: 100%;
+  box-shadow: 0 0 10px var(--primary);
 }
+
 
 /* Main Content */
 .dashboard-main {
@@ -218,13 +229,13 @@
 
 /* Balance Summary Card */
 .balance-summary-card {
-  background: var(--success-gradient);
+  background: var(--primary-gradient);
   color: white;
   border-radius: var(--radius-2xl);
   padding: 32px;
   margin-bottom: 32px;
-  box-shadow: var(--shadow-glass-xl);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   position: relative;
   overflow: hidden;
 }
@@ -316,12 +327,13 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* Overview Section */
 .overview-section h2 {
   color: var(--text-primary);
   margin-bottom: 24px;
   font-size: var(--font-size-2xl);
 }
+
+
 
 .cards-grid {
   display: grid;
@@ -331,13 +343,13 @@
 }
 
 .bank-card {
-  background: var(--glass-card-bg);
+  background: var(--glass-bg-light);
   backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-card-border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   padding: 24px;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
 }
@@ -393,21 +405,21 @@
 }
 
 .card-button {
-  background: var(--glass-btn-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-btn-border);
-  color: var(--glass-btn-text);
-  padding: 8px 16px;
+  background: var(--primary-gradient);
+  color: white;
+  padding: 10px 20px;
   border-radius: var(--radius);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all var(--transition-normal);
+  border: none;
 }
 
 .card-button:hover {
-  background: var(--glass-btn-bg-hover);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 15px rgba(6, 182, 212, 0.3);
+  filter: brightness(1.1);
 }
 
 /* Profile Card */
@@ -1142,26 +1154,278 @@
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  padding: 15px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   color: var(--text-primary);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all var(--transition-normal);
 }
 
 .action-btn:hover {
-  background: var(--glass-bg-hover);
-  transform: translateY(-3px);
-  border-color: var(--primary);
-  color: var(--primary);
+  background: var(--glass-bg-light);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  border-color: var(--primary-light);
 }
 
 .action-btn .icon {
+  font-size: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.action-btn:hover .icon {
+  transform: scale(1.2) rotate(5deg);
+}
+
+/* Passbook Styles */
+.passbook-container {
+  background: #fdf6e3;
+  /* Classic Paper Color */
+  border-radius: 4px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 0 100px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
+  position: relative;
+  color: #2c3e50;
+  border-left: 8px solid #8e44ad;
+  /* Virtual spine */
+}
+
+.passbook-inner {
+  border: 1px solid #d3d3d3;
+  padding: 20px;
+  min-height: 600px;
+  background-image: repeating-linear-gradient(white, white 24px, #f0f0f0 25px);
+}
+
+.passbook-cover {
+  border-bottom: 2px solid #2c3e50;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.bank-branch {
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: #8e44ad;
+}
+
+.account-holder,
+.account-no {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.passbook-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.passbook-table th {
+  border-bottom: 2px solid #2c3e50;
+  padding: 10px 5px;
+  text-align: left;
+  font-size: 0.75rem;
+  color: #7f8c8d;
+}
+
+.passbook-table td {
+  padding: 8px 5px;
+  font-size: 0.85rem;
+  height: 25px;
+  vertical-align: middle;
+  border-bottom: 1px dotted #ccc;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.particular-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.trans-id {
+  font-size: 0.6rem;
+  color: #95a5a6;
+}
+
+.pass-status {
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 2px;
+  font-size: 0.65rem;
+}
+
+.pass-status.completed {
+  color: #27ae60;
+  border: 1px solid #27ae60;
+}
+
+.pass-status.pending {
+  color: #f39c12;
+  border: 1px solid #f39c12;
+}
+
+.passbook-header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.balance-info {
+  text-align: right;
+}
+
+.balance-info .value {
+  display: block;
   font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-light);
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+}
+
+.passbook-footer {
+  margin-top: 30px;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #95a5a6;
+  letter-spacing: 2px;
+}
+
+/* Banking Table Styles */
+.banking-table-container {
+  background: var(--glass-bg-dark);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  margin-top: 20px;
+  backdrop-filter: var(--glass-blur);
+}
+
+.banking-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--font-size-sm);
+}
+
+.banking-table th {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-semibold);
+  border-bottom: 1px solid var(--glass-border);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+}
+
+.banking-table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.banking-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.banking-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ref-no {
+  font-family: monospace;
+  color: var(--primary-light);
+  font-size: 0.85rem;
+}
+
+.type-badge {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.02em;
+}
+
+.type-badge.deposit {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.type-badge.transfer {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+
+.type-badge.withdrawal {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.amount-credit {
+  color: #10b981;
+}
+
+.amount-debit {
+  color: #f87171;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-dot.completed {
+  background: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.status-dot.pending {
+  background: #f59e0b;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.status-dot.failed {
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.desc-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transfer-details {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+.empty-row {
+  text-align: center;
+  padding: 40px !important;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 @media (max-width: 600px) {

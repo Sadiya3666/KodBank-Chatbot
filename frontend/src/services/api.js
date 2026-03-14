@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Dynamic API URL based on environment
+const API_BASE_URL = process.env.REACT_APP_API_URL || 
+  (window.location.origin === 'http://localhost:3000' 
+    ? 'http://localhost:5000/api' 
+    : `${window.location.origin}/api`);
 
 // Create axios instance
 const api = axios.create({

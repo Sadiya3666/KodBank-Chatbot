@@ -7,25 +7,26 @@ const rateLimit = require('express-rate-limit');
 const expressValidator = require('express-validator');
 
 // Import middleware
-const { 
-  errorHandler, 
-  notFoundHandler, 
+const {
+  errorHandler,
+  notFoundHandler,
   databaseErrorHandler,
   healthCheckErrorHandler,
   timeoutHandler,
   payloadTooLargeHandler
 } = require('./middleware/errorHandler');
-const { 
-  authenticate, 
-  securityHeaders, 
+const {
+  authenticate,
+  securityHeaders,
   requestLogger,
-  rateLimit: customRateLimit 
+  rateLimit: customRateLimit
 } = require('./middleware/authMiddleware');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const bankRoutes = require('./routes/bankRoutes');
 const userRoutes = require('./routes/userRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
 
 // Import utilities
 const logger = require('./utils/logger');
@@ -33,6 +34,12 @@ const database = require('./config/database');
 
 // Create Express app
 const app = express();
+
+// Global Debug Logger
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Incoming Request: ${req.method} ${req.url} (Original: ${req.originalUrl})`);
+  next();
+});
 
 // Trust proxy for rate limiting and IP detection
 app.set('trust proxy', 1);
@@ -60,23 +67,23 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // In development, allow all origins
     if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
-    
+
     // In production, allow specific origins
     const allowedOrigins = [
       'http://localhost:3000',
       'https://kodbank.example.com',
       'https://www.kodbank.example.com'
     ];
-    
+
     if (process.env.ALLOWED_ORIGINS) {
       allowedOrigins.push(...process.env.ALLOWED_ORIGINS.split(','));
     }
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -102,16 +109,89 @@ app.use(securityHeaders);
 app.use(compression());
 
 // Body parsing middleware
-app.use(express.json({ 
+app.use(express.json({
   limit: '10mb',
   verify: (req, res, buf) => {
     req.rawBody = buf;
   }
 }));
-app.use(express.urlencoded({ 
-  extended: true, 
-  limit: '10mb' 
+app.use(express.urlencoded({
+  extended: true,
+  limit: '10mb'
 }));
+
+// Added raw body support for direct binary uploads (needed for image analysis)
+app.use(express.raw({
+  type: ['application/octet-stream', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+  limit: '10mb'
+}));
+
+// Hugging Face API Proxy Endpoint (TOP PRIORITY)
+app.use('/api/hf-proxy', async (req, res) => {
+  try {
+    const rawHfToken = process.env.HF_TOKEN || 'your_huggingface_token_here';
+    const hfToken = rawHfToken.trim();
+
+    let pathPart = req.url;
+    if (pathPart.startsWith('/')) pathPart = pathPart.substring(1);
+
+    // Use the new hf-inference path for raw models, router /v1 for chat
+    let targetUrl = `https://router.huggingface.co/hf-inference/${pathPart}`;
+
+    if (pathPart.includes('v1/chat/completions')) {
+      targetUrl = `https://router.huggingface.co/v1/chat/completions`;
+    }
+
+    console.log(`[HF Proxy New Endpoint] ${req.method} ${req.originalUrl} -> ${targetUrl}`);
+
+    const isBinary = req.headers['content-type'] === 'application/octet-stream' ||
+      req.headers['content-type']?.includes('image/');
+
+    const requestBody = (isBinary || req.method === 'GET' || req.method === 'DELETE' || req.method === 'OPTIONS') ?
+      (isBinary ? req.body : undefined) :
+      JSON.stringify(req.body);
+
+    const fetchOptions = {
+      method: req.method,
+      headers: {
+        'Authorization': `Bearer ${hfToken}`,
+        'Content-Type': req.headers['content-type'] || 'application/json',
+        'Accept': 'application/json',
+        'X-Wait-For-Model': 'true'
+      }
+    };
+
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS' && requestBody) {
+      fetchOptions.body = requestBody;
+    }
+
+    const response = await fetch(targetUrl, fetchOptions);
+    console.log(`[HF Proxy-Top] Response Status: ${response.status}`);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        data = { message: text };
+      }
+    }
+
+    res.status(response.status).json(data);
+  } catch (error) {
+    console.error('[HF Proxy-Top Error]:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      error: 'PROXY_ERROR'
+    });
+  }
+});
 
 // Request logging
 app.use(morgan('combined', { stream: logger.stream }));
@@ -137,7 +217,7 @@ const limiter = rateLimit({
       method: req.method,
       url: req.originalUrl
     });
-    
+
     res.status(429).json({
       success: false,
       message: 'Too many requests from this IP, please try again later.',
@@ -165,7 +245,7 @@ const authLimiter = rateLimit({
 app.get('/health', async (req, res) => {
   try {
     const dbHealth = await database.healthCheck();
-    
+
     const health = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -187,7 +267,7 @@ app.get('/health', async (req, res) => {
     res.json(health);
   } catch (error) {
     logger.logError(error, req);
-    
+
     res.status(503).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -206,6 +286,7 @@ app.get('/api', (req, res) => {
       auth: '/api/auth',
       bank: '/api/bank',
       user: '/api/user',
+      chatbot: '/api/chatbot',
       health: '/health'
     },
     documentation: '/api/docs',
@@ -218,6 +299,7 @@ app.get('/api', (req, res) => {
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // API documentation (simple version)
 app.get('/api/docs', (req, res) => {
@@ -304,28 +386,6 @@ app.use(errorHandler);
 // Handle 404 for non-API routes
 app.use(notFoundHandler);
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    logger.info('HTTP server closed');
-    database.close().then(() => {
-      logger.info('Database connections closed');
-      process.exit(0);
-    });
-  });
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  server.close(() => {
-    logger.info('HTTP server closed');
-    database.close().then(() => {
-      logger.info('Database connections closed');
-      process.exit(0);
-    });
-  });
-});
 
 // Unhandled promise rejection handler
 process.on('unhandledRejection', (reason, promise) => {
@@ -337,5 +397,6 @@ process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
 });
+
 
 module.exports = app;

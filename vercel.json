@@ -1,5 +1,6 @@
 {
     "version": 2,
+    "name": "kodbank-app",
     "builds": [
         {
             "src": "frontend/package.json",
@@ -7,12 +8,33 @@
             "config": {
                 "distDir": "build"
             }
+        },
+        {
+            "src": "api/index.js",
+            "use": "@vercel/node"
         }
     ],
     "routes": [
         {
+            "src": "/api/(.*)",
+            "dest": "/api/index.js"
+        },
+        {
+            "src": "/static/(.*)",
+            "headers": {
+                "cache-control": "s-maxage=31536000,immutable"
+            },
+            "dest": "/static/$1"
+        },
+        {
+            "handle": "filesystem"
+        },
+        {
             "src": "/(.*)",
-            "dest": "/frontend/$1"
+            "dest": "/index.html"
         }
-    ]
+    ],
+    "env": {
+        "NODE_ENV": "production"
+    }
 }

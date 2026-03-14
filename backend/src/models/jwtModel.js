@@ -18,10 +18,10 @@ class JWTModel {
       `;
 
       const result = await database.query(query, [customer_id, token_value, expiry_time, true]);
-      
-      logger.info('JWT token stored', { 
-        token_id: result.rows[0].token_id, 
-        customer_id 
+
+      logger.info('JWT token stored', {
+        token_id: result.rows[0].token_id,
+        customer_id
       });
 
       return result.rows[0];
@@ -77,15 +77,15 @@ class JWTModel {
       `;
 
       const result = await database.query(query, [tokenValue]);
-      
+
       if (result.rows.length === 0) {
         logger.warn('Token not found for deactivation', { token_value: tokenValue });
         return null;
       }
 
-      logger.info('JWT token deactivated', { 
-        token_id: result.rows[0].token_id, 
-        customer_id: result.rows[0].customer_id 
+      logger.info('JWT token deactivated', {
+        token_id: result.rows[0].token_id,
+        customer_id: result.rows[0].customer_id
       });
 
       return result.rows[0];
@@ -106,10 +106,10 @@ class JWTModel {
       `;
 
       const result = await database.query(query, [customerId]);
-      
-      logger.info('All tokens deactivated for user', { 
-        customer_id, 
-        count: result.rows.length 
+
+      logger.info('All tokens deactivated for user', {
+        customer_id,
+        count: result.rows.length
       });
 
       return result.rows.length;
@@ -148,9 +148,9 @@ class JWTModel {
       `;
 
       const result = await database.query(query);
-      
-      logger.info('Expired tokens cleaned up', { 
-        count: result.rowCount 
+
+      logger.info('Expired tokens cleaned up', {
+        count: result.rowCount
       });
 
       return result.rowCount;
@@ -227,14 +227,14 @@ class JWTModel {
       `;
 
       const result = await database.query(query, [tokenValue, newExpiryTime]);
-      
+
       if (result.rows.length === 0) {
         return null;
       }
 
-      logger.info('Token expiry extended', { 
-        token_id: result.rows[0].token_id, 
-        customer_id: result.rows[0].customer_id 
+      logger.info('Token expiry extended', {
+        token_id: result.rows[0].token_id,
+        customer_id: result.rows[0].customer_id
       });
 
       return result.rows[0];
@@ -345,9 +345,9 @@ class JWTModel {
       `;
 
       const result = await database.query(query);
-      
-      logger.info('Old inactive tokens removed', { 
-        count: result.rowCount 
+
+      logger.info('Old inactive tokens removed', {
+        count: result.rowCount
       });
 
       return result.rowCount;
@@ -366,8 +366,9 @@ class JWTModel {
           token TEXT NOT NULL UNIQUE,
           expiry_time TIMESTAMP NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+        );
       `;
+
 
       await database.query(query);
       logger.info('Blacklist table ensured');

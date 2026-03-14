@@ -39,10 +39,16 @@
     "express-validator": "^7.3.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.11.0",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
+    "pdf-parse": "^1.1.1",
+    "pdf2json": "^4.0.2",
     "pg": "^8.11.3",
     "sqlite3": "^5.1.7",
-    "winston": "^3.11.0"
+    "tesseract.js": "^7.0.0",
+    "winston": "^3.11.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "eslint": "^8.55.0",

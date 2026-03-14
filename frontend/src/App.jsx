@@ -8,6 +8,8 @@ import { useAuth } from './hooks/useAuth';
 import Login from './components/Auth/Login';
 import Signup from './components/Auth/Signup';
 import Dashboard from './components/Dashboard/Dashboard';
+import Chatbot from './components/Chatbot/Chatbot';
+
 
 // Styles
 import './styles/globals.css';
@@ -43,6 +45,12 @@ const PublicRoute = ({ children }) => {
   }
 
   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
+};
+
+// Chatbot Wrapper to conditionally render
+const ChatbotWrapper = () => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Chatbot /> : null;
 };
 
 // Main App Component
@@ -88,9 +96,11 @@ function App() {
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </div>
+          <ChatbotWrapper />
         </Router>
       </NotificationProvider>
     </AuthProvider>
+
   );
 }
 

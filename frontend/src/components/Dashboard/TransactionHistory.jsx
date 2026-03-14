@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import bankService from '../../services/bankService';
+import { useAuth } from '../../hooks/useAuth';
 import './Dashboard.css';
 
 const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,7 +14,6 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
     total: 0
   });
 
-  // const [isSearching, setIsSearching] = useState(false); // Unused state removed to fix lint error
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchTransactions = async (offset = 0, search = '') => {
@@ -20,7 +21,6 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
       setLoading(true);
       let response;
       if (search) {
-        // setIsSearching(true); // Removed usage of unused state
         response = await bankService.searchTransactions({ q: search, limit: pagination.limit, offset });
       } else {
         response = await bankService.getTransactionHistory({
@@ -40,7 +40,6 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
       setError(error.message || 'Failed to fetch transactions');
     } finally {
       setLoading(false);
-      // setIsSearching(false); // Removed usage of unused state
     }
   };
 
@@ -68,36 +67,26 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
     }).format(amount);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('en-IN', {
+  const formatDate = (dateString, showTime = true) => {
+    const options = {
       day: '2-digit',
       month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getTransactionIcon = (type) => {
-    switch (type) {
-      case 'transfer':
-        return '💸';
-      case 'deposit':
-        return '⬇️';
-      case 'withdrawal':
-        return '⬆️';
-      default:
-        return '🔄';
+      year: 'numeric'
+    };
+    if (showTime) {
+      options.hour = '2-digit';
+      options.minute = '2-digit';
     }
+    return new Date(dateString).toLocaleString('en-IN', options);
   };
 
-  const getTransactionColor = (type, fromCustomerId, currentUserId) => {
-    if (type === 'deposit') return 'success';
-    if (type === 'withdrawal') return 'warning';
+  const getAmountClass = (type, fromId) => {
+    if (type === 'deposit') return 'amount-credit';
+    if (type === 'withdrawal') return 'amount-debit';
     if (type === 'transfer') {
-      return fromCustomerId === currentUserId ? 'danger' : 'success';
+      return fromId === user?.id || fromId === user?.customer_id ? 'amount-debit' : 'amount-credit';
     }
-    return 'primary';
+    return '';
   };
 
   const handlePageChange = (newOffset) => {
@@ -105,7 +94,6 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
   };
 
   const handleExportCSV = () => {
-    // CSV export functionality
     const csvContent = [
       ['Date', 'Type', 'Amount', 'Description', 'Status'],
       ...transactions.map(t => [
@@ -152,7 +140,7 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
       {onBack && (
         <div className="section-header">
           <button onClick={onBack} className="back-button">
-            ← Back to Dashboard
+            ← Back
           </button>
           <h2>Transaction History</h2>
         </div>
@@ -162,90 +150,75 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
         <div className="search-box">
           <input
             type="text"
-            placeholder="Search by amount, date or description..."
+            placeholder="Search transactions..."
             value={searchTerm}
             onChange={handleSearch}
             className="search-input"
           />
-          {searchTerm && <button onClick={() => { setSearchTerm(''); fetchTransactions(0, ''); }} className="clear-search">×</button>}
         </div>
-        <div className="history-actions">
-          <button onClick={handleExportCSV} className="export-button">
-            📥 Export CSV
-          </button>
-          {!limit && (
-            <button onClick={() => fetchTransactions(pagination.offset, searchTerm)} className="refresh-button">
-              🔄 Refresh
+        {!limit && (
+          <div className="history-actions">
+            <button onClick={handleExportCSV} className="export-button">
+              📥 Export CSV
             </button>
-          )}
-        </div>
-      </div>
-
-      <div className="history-info">
-        <span>Showing {transactions.length} of {pagination.total} transactions</span>
-      </div>
-
-      <div className="transactions-list">
-        {transactions.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">📊</div>
-            <h3>No Transactions Found</h3>
-            <p>Try adjusting your search or filters.</p>
           </div>
-        ) : (
-          transactions.map((transaction) => (
-            <div key={transaction.transaction_id} className="transaction-item">
-              <div className="transaction-icon">
-                {getTransactionIcon(transaction.transaction_type)}
-              </div>
-
-              <div className="transaction-details">
-                <div className="transaction-header">
-                  <span className="transaction-type">
-                    {transaction.transaction_type.charAt(0).toUpperCase() +
-                      transaction.transaction_type.slice(1)}
-                  </span>
-                  <span className={`transaction-amount ${getTransactionColor(
-                    transaction.transaction_type,
-                    transaction.from_customer_id,
-                    // This would come from auth context in real implementation
-                    1
-                  )}`}>
-                    {transaction.from_customer_id === 1 ? '-' : '+'}
-                    {formatCurrency(transaction.amount)}
-                  </span>
-                </div>
-
-                <div className="transaction-info">
-                  <span className="transaction-date">
-                    {formatDate(transaction.transaction_date)}
-                  </span>
-                  {transaction.description && (
-                    <span className="transaction-description">
-                      {transaction.description}
-                    </span>
-                  )}
-                </div>
-
-                {transaction.transaction_type === 'transfer' && (
-                  <div className="transfer-info">
-                    {transaction.from_customer_id === 1 ? (
-                      <span>To: Customer {transaction.to_customer_id}</span>
-                    ) : (
-                      <span>From: Customer {transaction.from_customer_id}</span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="transaction-status">
-                <span className={`status-badge ${transaction.status}`}>
-                  {transaction.status}
-                </span>
-              </div>
-            </div>
-          ))
         )}
+      </div>
+
+      <div className="banking-table-container">
+        <table className="banking-table">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Reference No.</th>
+              <th>Transaction Type</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th className="text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="empty-row">
+                  No transactions found
+                </td>
+              </tr>
+            ) : (
+              transactions.map((transaction) => (
+                <tr key={transaction.transaction_id}>
+                  <td>{formatDate(transaction.transaction_date)}</td>
+                  <td><span className="ref-no">#{transaction.transaction_id}</span></td>
+                  <td>
+                    <span className={`type-badge ${transaction.transaction_type}`}>
+                      {transaction.transaction_type.toUpperCase()}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="desc-cell">
+                      {transaction.description || 'Banking Transaction'}
+                      {transaction.transaction_type === 'transfer' && (
+                        <span className="transfer-details">
+                          {transaction.from_customer_id === user?.customer_id
+                            ? `To: ${transaction.to_customer_id}`
+                            : `From: ${transaction.from_customer_id}`}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`status-dot ${transaction.status}`}></span>
+                    {transaction.status}
+                  </td>
+                  <td className={`text-right font-bold ${getAmountClass(transaction.transaction_type, transaction.from_customer_id)}`}>
+                    {getAmountClass(transaction.transaction_type, transaction.from_customer_id) === 'amount-debit' ? '-' : '+'}
+                    {formatCurrency(transaction.amount)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       {!limit && pagination.total > pagination.limit && (
@@ -257,11 +230,9 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
           >
             ← Previous
           </button>
-
           <span className="page-info">
             Page {Math.floor(pagination.offset / pagination.limit) + 1} of {Math.ceil(pagination.total / pagination.limit)}
           </span>
-
           <button
             onClick={() => handlePageChange(pagination.offset + pagination.limit)}
             disabled={pagination.offset + pagination.limit >= pagination.total || loading}
@@ -275,7 +246,7 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
       {showViewAll && (
         <div className="view-all-container">
           <button onClick={onBack} className="view-all-button">
-            View All Transactions
+            View Full Statement
           </button>
         </div>
       )}
@@ -284,3 +255,4 @@ const TransactionHistory = ({ onBack, limit = null, showViewAll = false }) => {
 };
 
 export default TransactionHistory;
+

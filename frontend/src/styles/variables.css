@@ -1,157 +1,89 @@
-/* Glassmorphic Design System for KodBank App */
+/* Professional Glassmorphic Design System - Aurora Slate Theme */
 
 :root {
-  /* Glassmorphic Design System */
-  
-  /* Glass Colors */
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-bg-light: rgba(255, 255, 255, 0.15);
-  --glass-bg-dark: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --glass-border-light: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.15);
-  
-  /* Backdrop Filters */
-  --glass-blur: blur(10px);
-  --glass-blur-strong: blur(20px);
-  
-  /* Primary Colors */
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --primary-light: #818cf8;
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  
-  /* Secondary Colors */
-  --secondary: #8b5cf6;
-  --secondary-dark: #7c3aed;
-  --secondary-light: #a78bfa;
-  
-  /* Success Colors */
+  /* Core Palette */
+  --slate-950: #020617;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+
+  /* Glass Colors - Professional Translucency */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bg-light: rgba(255, 255, 255, 0.08);
+  --glass-bg-dark: rgba(0, 0, 0, 0.2);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-light: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-shadow-hover: 0 12px 48px 0 rgba(0, 0, 0, 0.5);
+
+  /* Backdrop Filters - High-End Frosting */
+  --glass-blur: blur(12px);
+  --glass-blur-strong: blur(24px);
+
+  /* Primary Accent - Cyber Cyan to Electric Violet */
+  --primary: #06b6d4;
+  --primary-dark: #0891b2;
+  --primary-light: #22d3ee;
+  --primary-gradient: linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%);
+
+  /* Secondary Accent - Deep Indigo */
+  --secondary: #6366f1;
+  --secondary-dark: #4f46e5;
+  --secondary-light: #818cf8;
+
+  /* State Colors */
   --success: #10b981;
-  --success-dark: #059669;
-  --success-light: #34d399;
-  --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  
-  /* Warning Colors */
+  --success-gradient: linear-gradient(135deg, #059669 0%, #10b981 100%);
   --warning: #f59e0b;
-  --warning-dark: #d97706;
-  --warning-light: #fbbf24;
-  
-  /* Error Colors */
   --error: #ef4444;
-  --error-dark: #dc2626;
-  --error-light: #f87171;
-  
-  /* Info Colors */
-  --info: #3b82f6;
-  --info-dark: #2563eb;
-  --info-light: #60a5fa;
-  
-  /* Glass Text Colors */
-  --text-primary: rgba(255, 255, 255, 0.95);
-  --text-secondary: rgba(255, 255, 255, 0.8);
-  --text-muted: rgba(255, 255, 255, 0.6);
-  --text-inverse: #1f2937;
-  
-  /* Background Gradients */
-  --bg-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --bg-gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --bg-gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  --bg-gradient-dark: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  
-  /* Glass Shadows */
-  --shadow-glass-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.1);
-  --shadow-glass-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
-  --shadow-glass-xl: 0 16px 64px rgba(0, 0, 0, 0.2);
-  --shadow-glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  
-  /* Border Radius */
+
+  /* Typography - Clean & Modern */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
+
+  /* Layout Variables */
   --radius-sm: 8px;
   --radius: 12px;
   --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
-  --radius-full: 9999px;
-  
-  /* Glass Button Styles */
-  --glass-btn-bg: rgba(255, 255, 255, 0.1);
-  --glass-btn-bg-hover: rgba(255, 255, 255, 0.2);
-  --glass-btn-border: rgba(255, 255, 255, 0.2);
-  --glass-btn-text: rgba(255, 255, 255, 0.9);
-  
-  /* Glass Input Styles */
-  --glass-input-bg: rgba(255, 255, 255, 0.05);
-  --glass-input-border: rgba(255, 255, 255, 0.1);
-  --glass-input-focus: rgba(99, 102, 241, 0.5);
-  --glass-input-text: rgba(255, 255, 255, 0.9);
-  --glass-input-placeholder: rgba(255, 255, 255, 0.5);
-  
-  /* Glass Card Styles */
-  --glass-card-bg: rgba(255, 255, 255, 0.08);
-  --glass-card-border: rgba(255, 255, 255, 0.1);
-  --glass-card-hover: rgba(255, 255, 255, 0.12);
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+
+  /* Transitions */
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Animation Keyframes */
+/* Base Reset Overrides */
+::selection {
+  background: rgba(6, 182, 212, 0.3);
+  color: #fff;
+}
+
+/* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-}
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
 
-@keyframes shimmer {
-  0% { background-position: -1000px 0; }
-  100% { background-position: 1000px 0; }
-}
-
-/* Dark Theme Variables */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: var(--color-gray-900);
-    --bg-secondary: var(--color-gray-800);
-    --bg-tertiary: var(--color-gray-700);
-    
-    --text-primary: var(--color-white);
-    --text-secondary: var(--color-gray-300);
-    --text-muted: var(--color-gray-400);
-    
-    --border-primary: var(--color-gray-600);
-    --border-secondary: var(--color-gray-700);
-    --border-light: var(--color-gray-800);
-    
-    --card-bg: var(--color-gray-800);
-    --card-shadow: var(--shadow-lg);
-    
-    --input-bg: var(--color-gray-800);
-    --input-border: var(--color-gray-600);
-    --input-focus-bg: var(--color-gray-700);
-    
-    --nav-bg: var(--color-gray-800);
-    --nav-border: var(--color-gray-600);
+  50% {
+    transform: translateY(-20px) scale(1.05);
   }
 }
 
-/* High Contrast Mode */
-@media (prefers-contrast: high) {
-  :root {
-    --border-primary: var(--color-gray-900);
-    --border-focus: var(--color-black);
-    --text-primary: var(--color-black);
-    --text-secondary: var(--color-gray-900);
-  }
-}
+@keyframes pulse-glow {
 
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --transition-fast: 0s;
-    --transition-normal: 0s;
-    --transition-slow: 0s;
+  0%,
+  100% {
+    opacity: 0.5;
+    filter: blur(40px);
+  }
+
+  50% {
+    opacity: 0.8;
+    filter: blur(60px);
   }
 }

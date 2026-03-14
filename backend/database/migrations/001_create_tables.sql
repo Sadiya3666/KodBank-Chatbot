@@ -1,3 +1,4 @@
+
 -- KodBank Database Schema
 -- Created on: 2026-02-19
 -- Description: Complete database schema for KodBank application

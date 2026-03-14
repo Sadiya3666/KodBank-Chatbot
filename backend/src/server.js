@@ -74,5 +74,29 @@ server.on('error', (error) => {
   }
 });
 
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    logger.info('HTTP server closed');
+    database.close().then(() => {
+      logger.info('Database connections closed');
+      process.exit(0);
+    });
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    logger.info('HTTP server closed');
+    database.close().then(() => {
+      logger.info('Database connections closed');
+      process.exit(0);
+    });
+  });
+});
+
 // Export server for testing
 module.exports = server;
+

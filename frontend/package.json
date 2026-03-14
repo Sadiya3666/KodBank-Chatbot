@@ -9,6 +9,9 @@
     "@testing-library/user-event": "^14.4.3",
     "axios": "^1.6.2",
     "canvas-confetti": "^1.9.4",
+    "highlight.js": "^11.11.1",
+    "marked": "^17.0.3",
+    "pdfjs-dist": "^5.4.624",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
@@ -56,5 +59,6 @@
     "tabWidth": 2,
     "useTabs": false
   },
-  "proxy": "http://localhost:5000"
+  "proxy": "http://localhost:5000",
+  "homepage": "."
 }
