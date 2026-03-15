@@ -7,12 +7,11 @@
         "backend"
     ],
     "scripts": {
-        "build": "npm run install:backend && npm run build:frontend",
-        "install:backend": "npm install",
-        "build:frontend": "cd frontend && npm install && GENERATE_SOURCEMAP=false npm run build",
+        "build": "cd frontend && CI=false GENERATE_SOURCEMAP=false npm run build",
         "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
         "dev:frontend": "npm start --workspace=frontend",
-        "dev:backend": "npm run dev --workspace=backend"
+        "dev:backend": "npm run dev --workspace=backend",
+        "install:all": "npm install"
     },
     "dependencies": {
         "bcryptjs": "^3.0.3",
