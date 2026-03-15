@@ -11,6 +11,18 @@
             "destination": "/frontend/build/static/$1"
         },
         {
+            "source": "/manifest.json",
+            "destination": "/frontend/build/manifest.json"
+        },
+        {
+            "source": "/favicon.ico",
+            "destination": "/frontend/build/favicon.ico"
+        },
+        {
+            "source": "/logo192.png",
+            "destination": "/frontend/build/logo192.png"
+        },
+        {
             "source": "/(.*)",
             "destination": "/frontend/build/index.html"
         }
