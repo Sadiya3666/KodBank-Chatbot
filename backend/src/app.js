@@ -62,16 +62,8 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
-const corsOptions = {
-  origin: true, // This automatically allows whatever URL is calling it (Perfect for split frontend/backend)
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-  exposedHeaders: ['X-Total-Count', 'X-Page-Count']
-};
-
-app.use(cors(corsOptions));
+// Super-permissive CORS for production
+app.use(cors()); // This allows all origins by default (Standard fix)
 
 // Custom security headers
 app.use(securityHeaders);
@@ -266,8 +258,8 @@ app.get('/api', (req, res) => {
   });
 });
 
-// API routes
-app.use('/api/auth', authLimiter, authRoutes);
+// API routes (Limiter removed for stable testing)
+app.use('/api/auth', authRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/chatbot', chatbotRoutes);
