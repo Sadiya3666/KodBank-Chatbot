@@ -5,13 +5,11 @@ const logger = require('../utils/logger');
 // Database configuration
 const config = {
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL.includes('aivencloud.com')
-    ? { rejectUnauthorized: false }
-    : false,
-  connectionTimeoutMillis: 30000,
+  ssl: { rejectUnauthorized: false },
+  // Serverless optimizations
+  connectionTimeoutMillis: 15000, 
   idleTimeoutMillis: 10000,
-  max: 10,
-  min: 2,
+  max: 1, // Crucial for Vercel to not over-connect
 };
 
 // Create connection pool
