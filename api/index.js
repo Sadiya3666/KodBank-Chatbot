@@ -6,24 +6,14 @@ let isInitialized = false;
 
 // Handle Vercel serverless function
 module.exports = async (req, res) => {
-  // Set CORS headers for serverless environment
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Let Express handle all headers and CORS logic
   
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  // Ensure database is ready
+  // Ensure database is ready (Lazy initialization)
   if (!isInitialized) {
     try {
       if (process.env.RUN_MIGRATIONS === 'true') {
         console.log('Production initialization: running migrations...');
         await database.runMigrations();
-      } else {
         await database.testConnection();
       }
       isInitialized = true;
