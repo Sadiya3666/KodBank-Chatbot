@@ -25,7 +25,7 @@ const Chatbot = () => {
   const API_BASE_URL = (getEnv('API_URL') || 
     (window.location.hostname === 'localhost' 
       ? 'http://localhost:5001/api' 
-      : `${window.location.origin}/api`)).replace(/\/$/, '');
+      : 'https://kodbank-chatbot.onrender.com/api')).replace(/\/$/, '');
 
   const [isOpen, setIsOpen] = useState(false);
   const [chats, setChats] = useState(() => {

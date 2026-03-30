@@ -4,7 +4,7 @@ import axios from 'axios';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 
   (window.location.hostname === 'localhost' 
     ? 'http://localhost:5001/api' 
-    : `${window.location.origin}/api`);
+    : 'https://kodbank-chatbot.onrender.com/api');
 
 // Create axios instance
 const api = axios.create({
