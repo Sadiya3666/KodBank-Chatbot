@@ -22,7 +22,10 @@ const Chatbot = () => {
     return process.env[craKey] || process.env[viteKey];
   };
 
-  const API_BASE_URL = (getEnv('API_URL') || 'http://localhost:5001/api').replace(/\/$/, '');
+  const API_BASE_URL = (getEnv('API_URL') || 
+    (window.location.hostname === 'localhost' 
+      ? 'http://localhost:5001/api' 
+      : `${window.location.origin}/api`)).replace(/\/$/, '');
 
   const [isOpen, setIsOpen] = useState(false);
   const [chats, setChats] = useState(() => {
@@ -372,7 +375,7 @@ const Chatbot = () => {
       console.error("Chatbot Fetch Error:", err);
       const isNetworkError = err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('network');
       const userFriendlyError = isNetworkError 
-        ? "Connection Error: The chatbot couldn't reach the server. Please check if your backend is running on port 5001."
+        ? `Connection Error: The chatbot couldn't reach the server at ${API_BASE_URL}. Please check if your backend is running.`
         : `AI Error: ${err.message}`;
       setError(userFriendlyError);
       
