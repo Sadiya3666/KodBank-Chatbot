@@ -88,13 +88,14 @@ app.use('/api/bank', bankRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 
-// Static files (for production/vercel)
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../public')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../public/index.html'));
+// Root route handler for health and status
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'KodBank API is running', 
+    status: 'healthy',
+    version: '1.0.0'
   });
-}
+});
 
 // Global 404
 app.use(notFoundHandler);
