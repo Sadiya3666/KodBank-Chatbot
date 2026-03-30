@@ -5,7 +5,7 @@ import 'highlight.js/styles/github-dark.css';
 import * as pdfjsLib from 'pdfjs-dist';
 import './Chatbot.css';
 
-// Initialize PDF.js worker using unpkg for version matching
+// Initialize PDF.js worker using a reliable CDN path (version matched)
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const Chatbot = () => {
@@ -22,7 +22,7 @@ const Chatbot = () => {
     return process.env[craKey] || process.env[viteKey];
   };
 
-  const API_BASE_URL = (getEnv('API_URL') || 'http://127.0.0.1:5001/api').replace(/\/$/, '');
+  const API_BASE_URL = (getEnv('API_URL') || 'http://localhost:5001/api').replace(/\/$/, '');
 
   const [isOpen, setIsOpen] = useState(false);
   const [chats, setChats] = useState(() => {
@@ -147,6 +147,26 @@ const Chatbot = () => {
   };
 
 
+  const generatePDFThumbnail = async (file) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1.5 }); // High scale for better OCR/Vision quality
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({ canvasContext: context, viewport: viewport }).promise;
+      // Use JPEG with 0.5 quality to keep payload small but clear
+      return canvas.toDataURL('image/jpeg', 0.5);
+    } catch (err) {
+      console.error("Error generating PDF thumbnail:", err);
+      return null;
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -159,11 +179,14 @@ const Chatbot = () => {
 
     const extension = file.name.split('.').pop().toLowerCase();
     const isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(extension);
+    const isPDF = extension === 'pdf';
     const category = isImage ? 'image' : 'file';
 
     let previewUrl = null;
     if (isImage) {
       previewUrl = await fileToBase64(file);
+    } else if (isPDF) {
+      previewUrl = await generatePDFThumbnail(file);
     }
 
     setPendingFile({
@@ -243,7 +266,8 @@ const Chatbot = () => {
             type: pendingFile.file.type,
             size: pendingFile.file.size,
             preview: pendingFile.preview,
-            category: pendingFile.type
+            category: pendingFile.type,
+            extension: pendingFile.extension
           }
         };
         updateMessagesAndHistory(userMessage);
@@ -257,6 +281,7 @@ const Chatbot = () => {
         };
         updateMessagesAndHistory(userMessage);
       }
+      console.log(`[Chatbot] Sending message to: ${API_BASE_URL}`);
       setInputMessage('');
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
     }
@@ -272,18 +297,25 @@ const Chatbot = () => {
         const formData = new FormData();
         formData.append('file', fileToProcess.file);
         formData.append('message', userMessageText);
+        if (fileToProcess.preview) {
+          formData.append('thumbnail', fileToProcess.preview);
+        }
         formData.append('history', JSON.stringify(messages.slice(-10).map(m => ({
           role: m.sender === 'user' ? 'user' : 'assistant',
           content: m.text
         }))));
 
+        const payloadSize = JSON.stringify(Object.fromEntries(formData)).length;
+        console.log(`[Chatbot] Sending file payload with size: ~${Math.round(payloadSize / 1024)} KB`);
+
         const response = await fetch(
           `${API_BASE_URL}/chatbot/message-with-file`,
           {
             method: "POST",
+            headers: {
+              "Authorization": `Bearer ${localStorage.getItem('token')}`
+            },
             body: formData
-            // Note: Don't set Content-Type header when sending FormData, 
-            // the browser will set it automatically with the boundary
           }
         );
 
@@ -297,7 +329,8 @@ const Chatbot = () => {
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify({
               message: messageToSend,
@@ -322,15 +355,38 @@ const Chatbot = () => {
         id: Date.now() + 1,
         text: botReply,
         sender: 'bot',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // Link bot message to the file it discussed
+        file: fileToProcess ? {
+          name: fileToProcess.name,
+          type: fileToProcess.file.type,
+          size: fileToProcess.file.size,
+          preview: fileToProcess.preview,
+          category: fileToProcess.type,
+          extension: fileToProcess.extension
+        } : null
       };
 
       updateMessagesAndHistory(botMessage);
     } catch (err) {
-      setError(err.message || "Failed to get AI response. Please try again.");
-      console.error(err);
+      console.error("Chatbot Fetch Error:", err);
+      const isNetworkError = err.message.toLowerCase().includes('fetch') || err.message.toLowerCase().includes('network');
+      const userFriendlyError = isNetworkError 
+        ? "Connection Error: The chatbot couldn't reach the server. Please check if your backend is running on port 5001."
+        : `AI Error: ${err.message}`;
+      setError(userFriendlyError);
+      
+      const botMessage = {
+        id: Date.now() + 1,
+        text: "⚠️ **System Error**: I encountered a connection issue while processing your request. Please ensure the backend server is running and try again.",
+        sender: 'bot',
+        timestamp: new Date().toISOString()
+      };
+      
+      updateMessagesAndHistory(botMessage);
     } finally {
       setIsTyping(false);
+      setUploadProgress(0);
     }
   };
 
@@ -446,8 +502,14 @@ const Chatbot = () => {
                         <div className="message-bubble">
                           {message.file && (
                             <div className="file-preview">
-                              {message.file.category === 'image' ? (
-                                <img src={message.file.preview} alt="upload" className="chat-image" />
+                              {message.file.preview ? (
+                                <div className="file-thumbnail-container">
+                                  <img src={message.file.preview} alt="file preview" className="chat-image-thumbnail" />
+                                  {message.file.extension === 'pdf' && <span className="pdf-badge">PDF</span>}
+                                  <div className="file-overlay-info">
+                                    <span className="file-name-overlay">{message.file.name}</span>
+                                  </div>
+                                </div>
                               ) : (
                                 <div className={`file-icon-box file-type-${message.file.extension === 'pdf' ? 'pdf' : ['doc', 'docx'].includes(message.file.extension) ? 'doc' : ['xls', 'xlsx'].includes(message.file.extension) ? 'xls' : 'txt'}`}>
                                   <span>{message.file.extension === 'pdf' ? '📄' : ['xls', 'xlsx'].includes(message.file.extension) ? '📊' : '📝'}</span>
@@ -509,8 +571,11 @@ const Chatbot = () => {
                 {pendingFile && (
                   <div className="pending-file-preview">
                     <div className="preview-content">
-                      {pendingFile.type === 'image' ? (
-                        <img src={pendingFile.preview} alt="pending" />
+                      {(pendingFile.type === 'image' || pendingFile.extension === 'pdf') && pendingFile.preview ? (
+                        <div className="pending-thumbnail-wrapper">
+                          <img src={pendingFile.preview} alt="pending" />
+                          {pendingFile.extension === 'pdf' && <span className="pdf-mini-badge">PDF</span>}
+                        </div>
                       ) : (
                         <div className={`preview-icon file-type-${pendingFile.extension === 'pdf' ? 'pdf' : ['doc', 'docx'].includes(pendingFile.extension) ? 'doc' : ['xls', 'xlsx'].includes(pendingFile.extension) ? 'xls' : 'txt'}`}>
                           {pendingFile.extension === 'pdf' ? '📄' : ['xls', 'xlsx'].includes(pendingFile.extension) ? '📊' : '📝'}
@@ -566,7 +631,7 @@ const Chatbot = () => {
                     <span className="char-count">{inputMessage.length}/2000</span>
                     <button
                       onClick={() => sendMessage()}
-                      disabled={isTyping || (!inputMessage.trim() && !uploadProgress)}
+                      disabled={isTyping || (!inputMessage.trim() && !pendingFile)}
                       className="send-button"
                     >
                       ➤

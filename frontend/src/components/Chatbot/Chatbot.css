@@ -405,6 +405,55 @@
   border-radius: 12px;
   margin-bottom: 8px;
   border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.file-thumbnail-container {
+  position: relative;
+  width: 140px;
+  height: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.chat-image-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pdf-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #EF4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.file-overlay-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  padding: 8px;
+}
+
+.file-name-overlay {
+  font-size: 10px;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
 .file-icon-box {
@@ -645,12 +694,31 @@
   overflow: hidden;
 }
 
-.preview-content img {
+.preview-content img,
+.pending-thumbnail-wrapper img {
   width: 40px;
   height: 40px;
   border-radius: 6px;
   object-fit: cover;
   border: 1px solid var(--glass-border);
+}
+
+.pending-thumbnail-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.pdf-mini-badge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  background: #EF4444;
+  color: white;
+  font-size: 8px;
+  padding: 1px 3px;
+  border-radius: 2px;
+  font-weight: bold;
 }
 
 .preview-icon {

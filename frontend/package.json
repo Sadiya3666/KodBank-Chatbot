@@ -59,6 +59,6 @@
     "tabWidth": 2,
     "useTabs": false
   },
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:5001",
   "homepage": "."
 }

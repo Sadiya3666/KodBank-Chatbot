@@ -10,7 +10,7 @@ class ChatbotController {
     /**
      * Handle text-only messages
      */
-    async handleMessage(req, res) {
+    handleMessage = async (req, res) => {
         try {
             const { message, history } = req.body;
 
@@ -35,7 +35,7 @@ class ChatbotController {
     /**
      * Handle file uploads and chat
      */
-    async handleFileMessage(req, res) {
+    handleFileMessage = async (req, res) => {
         try {
             const { message, history } = req.body;
             const file = req.file;
@@ -52,25 +52,23 @@ class ChatbotController {
                 extractedText = await fileParser.extractText(file);
             } catch (parseErr) {
                 console.error('File parsing error:', parseErr);
-                // Clean up file if parsing fails
-                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+                // Clean up file if parsing fails safely
+                if (file) this._cleanupFile(file.path);
                 return res.status(422).json({ success: false, message: `Could not read file: ${parseErr.message}` });
             }
 
-            // 2. Chat with HF service using extracted text
+            // 2. Chat with HF service using extracted text (and thumbnail for visual fallback)
             const reply = await huggingfaceService.chatWithFile(
                 message,
                 extractedText,
                 file.originalname,
                 file.mimetype,
-                history ? JSON.parse(history) : []
+                history ? JSON.parse(history) : [],
+                req.body.thumbnail // Pass thumbnail for visual fallback
             );
 
-            // 3. Clean up temp file
-            if (fs.existsSync(file.path)) {
-                fs.unlinkSync(file.path);
-                console.log(`[Chatbot] Cleaned up temp file: ${file.path}`);
-            }
+            // 3. Clean up temp file safely
+            this._cleanupFile(file.path);
 
             res.json({
                 success: true,
@@ -79,10 +77,34 @@ class ChatbotController {
             });
         } catch (error) {
             console.error('Chatbot Controller File Error:', error);
-            // Clean up temp file on error
-            if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-            res.status(500).json({ success: false, message: error.message });
+            // Clean up temp file on error safely
+            if (req.file) this._cleanupFile(req.file.path);
+            
+            res.status(500).json({ 
+                success: false, 
+                message: error.message || 'AI processing failed',
+                errorType: error.name
+            });
         }
+    }
+
+    /**
+     * Safely delete a file without crashing the server if it's busy
+     */
+    _cleanupFile = (filePath) => {
+        if (!filePath || !fs.existsSync(filePath)) return;
+        
+        // Use a small delay for Windows to release handles
+        setTimeout(() => {
+            try {
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                    console.log(`[Chatbot] Cleaned up file: ${path.basename(filePath)}`);
+                }
+            } catch (err) {
+                console.warn(`[Chatbot] Non-critical: Could not delete temp file ${filePath}: ${err.message}`);
+            }
+        }, 1000);
     }
 }
 

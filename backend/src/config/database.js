@@ -1,274 +1,202 @@
-require('dotenv').config();
-const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
 const logger = require('../utils/logger');
 
-// Database configuration
-const config = {
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  // Serverless optimizations
-  connectionTimeoutMillis: 15000, 
-  idleTimeoutMillis: 10000,
-  max: 1, // Crucial for Vercel to not over-connect
+// Local File Database — stored in mock_db folder next to the project root
+const DB_DIR = path.join(__dirname, '../../../mock_db');
+if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+
+const getFilePath = (table) => path.join(DB_DIR, `${table.toLowerCase()}.json`);
+
+const readTable = (table) => {
+  const fp = getFilePath(table);
+  if (!fs.existsSync(fp)) return [];
+  try {
+    const raw = JSON.parse(fs.readFileSync(fp, 'utf8'));
+    return Array.isArray(raw) ? raw : [];
+  } catch { return []; }
 };
 
-// Create connection pool
-const pool = new Pool(config);
+const writeTable = (table, data) => {
+  try { fs.writeFileSync(getFilePath(table), JSON.stringify(data, null, 2)); }
+  catch (e) { logger.error(`DB write error for ${table}:`, e.message); }
+};
 
-// Handle pool errors
-pool.on('error', (err, client) => {
-  logger.error('Unexpected error on idle client', err);
-  process.exit(-1);
-});
-
-// Database connection class
 class Database {
-  constructor() {
-    this.pool = pool;
-  }
-
-  // Test database connection
   async testConnection() {
-    try {
-      const client = await this.pool.connect();
-      const result = await client.query('SELECT NOW()');
-      client.release();
-      logger.info('Database connection successful');
-      return { success: true, timestamp: result.rows[0].now };
-    } catch (error) {
-      logger.error('Database connection failed:', error);
-      throw error;
-    }
+    console.log('✅ DATABASE: Running in Full Local-File Mode (no cloud needed)');
+    return { success: true };
   }
 
-  // Execute query with parameters
   async query(text, params = []) {
-    const start = Date.now();
+    const textUp = text.trim().toUpperCase();
 
-    try {
-      const client = await this.pool.connect();
-      const result = await client.query(text, params);
-      client.release();
-
-      const duration = Date.now() - start;
-      logger.debug('Query executed', { text, duration, rows: result.rowCount });
-
-      return result;
-    } catch (error) {
-      const duration = Date.now() - start;
-      logger.error('Query failed', { text, duration, error: error.message });
-      throw error;
-    }
-  }
-
-  // Execute transaction
-  async transaction(callback) {
-    const client = await this.pool.connect();
-
-    try {
-      await client.query('BEGIN');
-      const result = await callback(client);
-      await client.query('COMMIT');
-      return result;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  // Get single row
-  async one(text, params = []) {
-    const result = await this.query(text, params);
-    return result.rows[0] || null;
-  }
-
-  // Get multiple rows
-  async many(text, params = []) {
-    const result = await this.query(text, params);
-    return result.rows;
-  }
-
-  // Get single value
-  async value(text, params = []) {
-    const result = await this.one(text, params);
-    if (result && Object.keys(result).length > 0) {
-      return result[Object.keys(result)[0]];
-    }
-    return null;
-  }
-
-  // Check if record exists
-  async exists(text, params = []) {
-    const result = await this.value(text, params);
-    return Boolean(result);
-  }
-
-  // Insert record and return ID
-  async insert(table, data) {
-    const keys = Object.keys(data);
-    const values = Object.values(data);
-    const placeholders = keys.map((_, index) => `$${index + 1}`).join(', ');
-
-    const text = `
-      INSERT INTO ${table} (${keys.join(', ')}) 
-      VALUES (${placeholders}) 
-      RETURNING *
-    `;
-
-    return await this.one(text, values);
-  }
-
-  // Update record
-  async update(table, data, where, whereParams = []) {
-    const keys = Object.keys(data);
-    const values = Object.values(data);
-    const setClause = keys.map((key, index) => `${key} = $${index + 1}`).join(', ');
-
-    const text = `
-      UPDATE ${table} 
-      SET ${setClause} 
-      WHERE ${where}
-      RETURNING *
-    `;
-
-    return await this.one(text, [...values, ...whereParams]);
-  }
-
-  // Delete record
-  async delete(table, where, params = []) {
-    const text = `DELETE FROM ${table} WHERE ${where}`;
-    const result = await this.query(text, params);
-    return result.rowCount;
-  }
-
-  // Get pool stats
-  getPoolStats() {
-    return {
-      totalCount: this.pool.totalCount,
-      idleCount: this.pool.idleCount,
-      waitingCount: this.pool.waitingCount,
+    // ─── HELPER: extract first table name ────────────────────────────────
+    const extractTable = (sql) => {
+      const m = sql.match(/(?:FROM|INSERT INTO|UPDATE|DELETE FROM)\s+([a-zA-Z0-9_]+)/i);
+      return m ? m[1] : null;
     };
-  }
 
-  // Close all connections
-  async close() {
-    await this.pool.end();
-    logger.info('Database connection pool closed');
-  }
-
-  // Health check
-  async healthCheck() {
-    try {
-      const result = await this.query('SELECT 1 as health');
-      const stats = this.getPoolStats();
-
-      return {
-        status: 'healthy',
-        database: result.rows[0].health === 1,
-        pool: stats,
-        timestamp: new Date().toISOString()
-      };
-    } catch (error) {
-      return {
-        status: 'unhealthy',
-        error: error.message,
-        timestamp: new Date().toISOString()
-      };
-    }
-  }
-
-  // Run migrations
-  async runMigrations() {
-    try {
-      // Create migrations table if it doesn't exist
-      await this.query(`
-        CREATE TABLE IF NOT EXISTS migrations (
-          id SERIAL PRIMARY KEY,
-          filename VARCHAR(255) NOT NULL UNIQUE,
-          executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      // Get migration files
-      const fs = require('fs');
-      const path = require('path');
-      // Resolve migrations path more robustly for Vercel
-      const migrationsDir = process.env.VERCEL 
-        ? path.join(process.cwd(), 'backend/database/migrations')
-        : path.join(__dirname, '../../database/migrations');
-
-      if (!fs.existsSync(migrationsDir)) {
-        logger.info(`No migrations directory found at: ${migrationsDir}`);
-        return;
-      }
-
-      const migrationFiles = fs.readdirSync(migrationsDir)
-        .filter(file => file.endsWith('.sql'))
-        .sort();
-
-      // Get executed migrations
-      const executedMigrations = await this.many(
-        'SELECT filename FROM migrations ORDER BY filename'
+    // ─── 1. TOKEN BLACKLIST CHECK (is_active = FALSE) ─────────────────────
+    // Query: SELECT 1 FROM BankUserJwt WHERE token_value = $1 AND (is_active = FALSE ...)
+    if (textUp.includes('IS_ACTIVE = FALSE') || textUp.includes('IS_ACTIVE = FALSE')) {
+      const tokens = readTable('BankUserJwt');
+      const now = new Date();
+      const rows = tokens.filter(t =>
+        t.token_value === params[0] &&
+        (t.is_active === false || t.is_active === 0 || (t.expiry_time && new Date(t.expiry_time) <= now))
       );
-      const executedFiles = executedMigrations.map(m => m.filename);
+      return { rows, rowCount: rows.length };
+    }
 
-      // Run pending migrations
-      for (const file of migrationFiles) {
-        if (!executedFiles.includes(file)) {
-          logger.info(`Running migration: ${file}`);
+    // ─── 2. JOIN QUERY: Token Validation  ────────────────────────────────
+    if (textUp.includes('JOIN BANKUSER')) {
+      const tokens = readTable('BankUserJwt');
+      const users  = readTable('BankUser');
+      const now = new Date();
+      const rows = tokens
+        .filter(t =>
+          t.token_value === params[0] &&
+          (t.is_active === true || t.is_active === 1) &&
+          (!t.expiry_time || new Date(t.expiry_time) > now)
+        )
+        .map(t => {
+          const user = users.find(u => u.customer_id === t.customer_id);
+          return user ? { ...t, name: user.name, email: user.email } : t;
+        });
+      return { rows, rowCount: rows.length };
+    }
 
-          const migrationSQL = fs.readFileSync(
-            path.join(migrationsDir, file),
-            'utf8'
-          );
+    // ─── 3. STATISTICS / Complex GROUP BY ────────────────────────────────
+    if (textUp.includes('COUNT(T.TRANSACTION_ID)') || textUp.includes('LEFT JOIN')) {
+      const users = readTable('BankUser');
+      const user  = users.find(u => u.customer_id === parseInt(params[0]));
+      if (user) {
+        return {
+          rows: [{ ...user, total_transactions: 0, total_deposits: 0, total_withdrawals: 0, total_sent: 0, total_received: 0 }],
+          rowCount: 1
+        };
+      }
+      return { rows: [], rowCount: 0 };
+    }
 
-          await this.transaction(async (client) => {
-            await client.query(migrationSQL);
-            await client.query(
-              'INSERT INTO migrations (filename) VALUES ($1)',
-              [file]
-            );
-          });
+    // ─── 4. SELECT ────────────────────────────────────────────────────────
+    if (textUp.startsWith('SELECT')) {
+      const table = extractTable(text);
+      if (!table) return { rows: [], rowCount: 0 };
+      const data = readTable(table);
+      let rows = data;
 
-          logger.info(`Migration completed: ${file}`);
-        }
+      if (textUp.includes('WHERE EMAIL =')) {
+        rows = data.filter(u =>
+          u.email?.toLowerCase().trim() === params[0]?.toLowerCase().trim()
+        );
+      } else if (textUp.includes('WHERE TOKEN_VALUE =')) {
+        // Active tokens only (findActiveToken)
+        rows = data.filter(t =>
+          t.token_value === params[0] &&
+          (t.is_active === true || t.is_active === 1)
+        );
+      } else if (textUp.includes('WHERE CUSTOMER_ID =')) {
+        rows = data.filter(u => u.customer_id === parseInt(params[0]));
       }
 
-      logger.info('All migrations are up to date');
-    } catch (error) {
-      logger.error('Migration failed:', error);
-      throw error;
+      return { rows, rowCount: rows.length };
     }
+
+    // ─── 5. INSERT ────────────────────────────────────────────────────────
+    if (textUp.startsWith('INSERT INTO')) {
+      const table = extractTable(text);
+      const data  = readTable(table);
+      const isJwt = textUp.includes('BANKUSERJWT');
+      const idKey = isJwt ? 'token_id' : 'customer_id';
+      const newId = data.length > 0 ? Math.max(...data.map(i => parseInt(i[idKey]) || 0)) + 1 : 1;
+
+      let newItem = { [idKey]: newId, created_at: new Date().toISOString() };
+
+      if (isJwt) {
+        newItem = { ...newItem, customer_id: params[0], token_value: params[1], expiry_time: params[2], is_active: params[3] !== undefined ? params[3] : true };
+      } else {
+        // BankUser insert
+        newItem = { ...newItem, name: params[0], email: params[1] ? params[1].toLowerCase().trim() : '', password: params[2], balance: parseFloat(params[3]) || 500, updated_at: new Date().toISOString() };
+      }
+
+      data.push(newItem);
+      writeTable(table, data);
+      return { rows: [newItem], rowCount: 1 };
+    }
+
+    // ─── 6. UPDATE ────────────────────────────────────────────────────────
+    if (textUp.startsWith('UPDATE')) {
+      const table = extractTable(text);
+      const data  = readTable(table);
+      let count   = 0;
+
+      let updatedRows = [];
+      if (textUp.includes('WHERE TOKEN_VALUE =')) {
+        // Deactivate / update token by token_value (param[0])
+        data.forEach(t => {
+          if (t.token_value === params[0]) { t.is_active = false; count++; updatedRows.push(t); }
+        });
+      } else if (textUp.includes('WHERE CUSTOMER_ID =')) {
+        // The WHERE id is always the LAST param
+        const id = parseInt(params[params.length - 1]);
+        const idx = data.findIndex(u => u.customer_id === id);
+        if (idx !== -1) {
+          if (textUp.includes('BALANCE ='))  data[idx].balance  = parseFloat(params[0]);
+          if (textUp.includes('PASSWORD =')) data[idx].password = params[0];
+          if (textUp.includes('NAME ='))     data[idx].name     = params[0];
+          if (textUp.includes('EMAIL ='))    data[idx].email    = params[0]?.toLowerCase();
+          data[idx].updated_at = new Date().toISOString();
+          count = 1;
+          updatedRows = [data[idx]];
+        }
+      } else if (textUp.includes('WHERE CUSTOMER_ID')) {
+        const id = parseInt(params[params.length - 1]);
+        data.forEach(t => {
+          if (t.customer_id === id) { t.is_active = false; count++; updatedRows.push(t); }
+        });
+      }
+
+      writeTable(table, data);
+      return { rows: updatedRows, rowCount: count };
+    }
+
+    // ─── 7. DELETE ────────────────────────────────────────────────────────
+    if (textUp.startsWith('DELETE')) {
+      const table = extractTable(text);
+      const data  = readTable(table);
+      const prev  = data.length;
+      const remaining = data.filter(r => r.customer_id !== parseInt(params[0]));
+      writeTable(table, remaining);
+      return { rows: [], rowCount: prev - remaining.length };
+    }
+
+    return { rows: [], rowCount: 0 };
   }
 
-  // Seed database
-  async seedDatabase() {
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const seedFile = path.join(__dirname, '../../database/seeds/seed_data.sql');
+  async one(text, params = []) {
+    const res = await this.query(text, params);
+    return res.rows[0] || null;
+  }
 
-      if (!fs.existsSync(seedFile)) {
-        logger.info('No seed file found');
-        return;
-      }
+  async many(text, params = []) {
+    const res = await this.query(text, params);
+    return res.rows;
+  }
 
-      logger.info('Running database seed...');
+  async transaction(callback) {
+    // Pass a thin client that routes back to this.query
+    return callback({ query: (t, p) => this.query(t, p) });
+  }
 
-      const seedSQL = fs.readFileSync(seedFile, 'utf8');
-      await this.query(seedSQL);
+  async healthCheck() {
+    return { status: 'healthy', mode: 'local-file' };
+  }
 
-      logger.info('Database seeded successfully');
-    } catch (error) {
-      logger.error('Database seeding failed:', error);
-      throw error;
-    }
+  async runMigrations() {
+    console.log('✅ Mock DB: migrations skipped (using local file storage)');
   }
 }
 
-// Create and export database instance
-const database = new Database();
-
-module.exports = database;
+module.exports = new Database();

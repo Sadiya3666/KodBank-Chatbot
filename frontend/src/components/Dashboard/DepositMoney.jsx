@@ -10,6 +10,7 @@ const DepositMoney = ({ onBack }) => {
     const [description, setDescription] = useState('Account top-up');
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const { refreshBalance } = useBalance();
     const { showNotification } = useNotification();
@@ -30,11 +31,15 @@ const DepositMoney = ({ onBack }) => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleDeposit = async (e) => {
+    const handleInitiateDeposit = (e) => {
         e.preventDefault();
+        if (validateForm()) {
+            setShowConfirm(true);
+        }
+    };
 
-        if (!validateForm()) return;
-
+    const handleConfirmDeposit = async () => {
+        setShowConfirm(false);
         setLoading(true);
         try {
             const response = await bankService.deposit(parseFloat(amount), description);
@@ -82,7 +87,7 @@ const DepositMoney = ({ onBack }) => {
                         </div>
                     </div>
 
-                    <form onSubmit={handleDeposit} className="transfer-form">
+                    <form onSubmit={handleInitiateDeposit} className="transfer-form">
                         {errors.general && (
                             <div className="error-message">{errors.general}</div>
                         )}
@@ -135,7 +140,7 @@ const DepositMoney = ({ onBack }) => {
                         <button
                             type="submit"
                             className="transfer-submit-btn deposit-btn"
-                            disabled={loading}
+                            disabled={loading || !amount}
                         >
                             {loading ? (
                                 <>
@@ -143,11 +148,30 @@ const DepositMoney = ({ onBack }) => {
                                     Processing Deposit...
                                 </>
                             ) : (
-                                `Confirm Deposit ₹${amount || '0'}`
+                                `Deposit ₹${amount || '0'}`
                             )}
                         </button>
                     </form>
                 </div>
+
+                {showConfirm && (
+                    <div className="modal-overlay">
+                        <div className="modal-content glass-card">
+                            <div className="modal-header">
+                                <h2>Confirm Deposit</h2>
+                            </div>
+                            <div className="modal-body">
+                                <p>You are about to deposit <strong>₹{parseFloat(amount).toLocaleString()}</strong> into your account.</p>
+                                {description && <p>Description: <em>{description}</em></p>}
+                                <p>Do you want to proceed?</p>
+                            </div>
+                            <div className="modal-footer">
+                                <button onClick={() => setShowConfirm(false)} className="btn-cancel">Cancel</button>
+                                <button onClick={handleConfirmDeposit} className="btn-confirm">Confirm & Add Funds</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="transfer-sidebar">
                     <div className="transfer-info-card">

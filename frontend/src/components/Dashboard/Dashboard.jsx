@@ -195,13 +195,13 @@ const Dashboard = () => {
       </main>
 
       {showLogoutConfirm && (
-        <div className="logout-modal-overlay">
-          <div className="logout-modal glass-card">
+        <div className="modal-overlay">
+          <div className="modal-content glass-card">
             <h3>Confirm Logout</h3>
             <p>Are you sure you want to end your session?</p>
-            <div className="modal-actions">
-              <button onClick={() => setShowLogoutConfirm(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleLogout} className="btn-primary">Logout</button>
+            <div className="modal-footer">
+              <button onClick={() => setShowLogoutConfirm(false)} className="btn-cancel">Cancel</button>
+              <button onClick={handleLogout} className="btn-confirm">Logout</button>
             </div>
           </div>
         </div>

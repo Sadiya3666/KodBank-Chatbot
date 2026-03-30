@@ -1,0 +1,65 @@
+[
+  {
+    "customer_id": 1,
+    "name": "sadiya Banu",
+    "email": "sadiyabanu578@gmail.com",
+    "password": "$2b$10$nHoz0OAL6uFwDfGEhrerUeN.WjwInQF3amfx0krzKy7KoUt2lcYs6",
+    "balance": 0,
+    "created_at": "2026-03-15T14:11:54.666Z",
+    "updated_at": "2026-03-15T14:11:54.666Z"
+  },
+  {
+    "customer_id": 2,
+    "created_at": "2026-03-15T14:54:54.858Z",
+    "name": "sadi",
+    "email": "sadifathima60@gmail.com",
+    "password": "$2b$10$fw/ANsdHAl.RhGy0MlheoeTsyDRsokDBMT3KN3KIJYqFWj.5LVhIq",
+    "balance": 90654
+  },
+  {
+    "customer_id": 3,
+    "created_at": "2026-03-15T15:01:51.114Z",
+    "updated_at": "2026-03-15T15:01:51.115Z",
+    "is_active": true,
+    "name": "fathima",
+    "email": "fathima87890@gmail.com",
+    "password": "$2b$10$itu3oQEirf1ecGte583QdeT3xpO0apcPYnftgSI6dgjAyZxwxonbW",
+    "balance": 500
+  },
+  {
+    "customer_id": 4,
+    "created_at": "2026-03-15T15:54:19.841Z",
+    "name": "saad",
+    "email": "saad7890@gmail.com",
+    "password": "$2b$10$Sfbk9G0LRfIJogHKCa9UzeFEQ7.qouXLFx9JcXmdMTYbuYiCGS6UK",
+    "balance": 74846,
+    "updated_at": "2026-03-15T15:54:19.841Z"
+  },
+  {
+    "customer_id": 5,
+    "created_at": "2026-03-21T18:33:15.832Z",
+    "name": "sadiya banu",
+    "email": "janu57899@gmail.com",
+    "password": "$2b$10$itiqjuSp59E7Zh2Dxz8I5OW7nZLyWbjrWaMxpiIoLFe0uWnHZv7wS",
+    "balance": 500,
+    "updated_at": "2026-03-21T18:33:15.832Z"
+  },
+  {
+    "customer_id": 6,
+    "created_at": "2026-03-30T15:21:55.099Z",
+    "name": "sadiya banu",
+    "email": "saad0@gmail.com",
+    "password": "$2b$10$1dgemX/CKa9fGsK.Hfd0QOTJhpzfe5KzOPW5KS7IMCdDT7kMidLZu",
+    "balance": 36500,
+    "updated_at": "2026-03-30T15:21:55.099Z"
+  },
+  {
+    "customer_id": 7,
+    "created_at": "2026-03-30T15:33:31.943Z",
+    "name": "Fathima",
+    "email": "saniya57808@gmail.com",
+    "password": "$2b$10$sF2116rrNGsLPRRLBG.QFOHtRdmBiZKbFjgfqXMK99BbGYW42hWIe",
+    "balance": 14500,
+    "updated_at": "2026-03-30T15:33:31.943Z"
+  }
+]

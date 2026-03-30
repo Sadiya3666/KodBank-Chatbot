@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Dynamic API URL based on environment
 const API_BASE_URL = process.env.REACT_APP_API_URL || 
-  (window.location.origin === 'http://localhost:3000' 
-    ? 'http://localhost:5000/api' 
+  (window.location.hostname === 'localhost' 
+    ? 'http://localhost:5001/api' 
     : `${window.location.origin}/api`);
 
 // Create axios instance
@@ -12,7 +12,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 60000, // 60 seconds timeout (better for AI processing)
 });
 
 // Request interceptor - Add auth token

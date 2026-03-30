@@ -47,7 +47,7 @@ const errorHandler = (err, req, res, next) => {
     statusCode = 400;
     message = 'Data too long';
     errorCode = 'DATA_TOO_LONG';
-  } else if (err.message.includes('Email already exists')) {
+  } else if (err.message.includes('Email already exists') || err.message.includes('Email already registered')) {
     statusCode = 409;
     message = 'Email already registered';
     errorCode = 'EMAIL_EXISTS';
@@ -120,9 +120,9 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Handle database connection errors
-  if (err.code === 'ECONNREFUSED') {
+  if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
     statusCode = 503;
-    message = 'Database connection failed';
+    message = 'Database connection failed: The host is unreachable. Check your internet or DATABASE_URL.';
     errorCode = 'DATABASE_CONNECTION_ERROR';
   } else if (err.code === 'ETIMEDOUT') {
     statusCode = 503;

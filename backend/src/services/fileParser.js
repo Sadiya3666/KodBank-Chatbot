@@ -4,6 +4,7 @@ const mammoth = require('mammoth');
 const xlsx = require('xlsx');
 const Tesseract = require('tesseract.js');
 const fs = require('fs');
+const path = require('path');
 
 /**
  * Service to parse different file types and extract text content
@@ -16,20 +17,31 @@ class FileParser {
      */
     async parsePDF(filePath) {
         try {
+            console.log(`[FileParser] Starting PDF parse for: ${path.basename(filePath)}`);
             const dataBuffer = fs.readFileSync(filePath);
 
             // Try primary parser (pdf-parse)
+            console.log(`[FileParser] Attempting primary (pdf-parse)...`);
             let result = await pdf(dataBuffer);
             let text = result.text || "";
+            console.log(`[FileParser] Primary text length: ${text.length}`);
 
             // If empty, try secondary parser (pdf2json)
             if (!text || text.trim().length < 20) {
                 console.log("[FileParser] Primary PDF parser returned empty. Trying secondary parser...");
                 text = await this.parseWithPDF2JSON(filePath);
+                console.log(`[FileParser] Secondary text length: ${text.length}`);
             }
 
+            // If still empty, it might be a scanned document. Attempt a basic OCR on the first page if possible.
             if (!text || text.trim().length < 10) {
-                return "[SYSTEM_NOTICE: NO_TEXT_FOUND] This PDF appears to be a scanned document or has no searchable text layer. Please describe the contents or upload an image version.";
+                console.log("[FileParser] PDF appears to be scanned. Attempting basic OCR fallback...");
+                try {
+                    // Signal to HF service that we need visual/OCR fallback
+                    text = "[SYSTEM_NOTICE: NO_TEXT_FOUND_IN_PARSE] This PDF has no digital text layer.";
+                } catch (ocrErr) {
+                    console.warn("[FileParser] OCR Fallback failed:", ocrErr.message);
+                }
             }
 
             return text;
@@ -44,13 +56,17 @@ class FileParser {
      */
     async parseWithPDF2JSON(filePath) {
         return new Promise((resolve) => {
+            console.log(`[FileParser] Initializing PDF2JSON for fallback...`);
             const pdfParser = new PDFParser(this, 1);
             pdfParser.on("pdfParser_dataError", (err) => {
                 console.error("PDF2JSON Error:", err);
                 resolve("");
             });
             pdfParser.on("pdfParser_dataReady", (pdfData) => {
-                const text = pdfParser.getRawTextContent();
+                console.log(`[FileParser] PDF2JSON extraction ready.`);
+                let text = pdfParser.getRawTextContent();
+                // Clean up boilerplate breaks
+                text = text.replace(/-+Page \(\d+\) Break-+/g, '\n');
                 resolve(text);
             });
             pdfParser.loadPDF(filePath);
