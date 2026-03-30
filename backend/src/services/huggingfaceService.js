@@ -7,7 +7,7 @@ const Tesseract = require('tesseract.js');
 class HuggingFaceService {
     constructor() {
         this.token = (process.env.HF_TOKEN || 'your_huggingface_token_here').trim();
-        this.defaultModel = "mistralai/Mistral-7B-v0.3";
+        this.defaultModel = "mistralai/Mistral-7B-Instruct-v0.3";
         this.visionModel = "meta-llama/Llama-3.2-11B-Vision-Instruct";
     }
 
